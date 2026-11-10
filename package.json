@@ -1,0 +1,10 @@
+{
+  "name": "tom-doub-r-system",
+  "version": "1.0.0",
+  "description": "Tom Doub R-Based Position Sizing Calculator, 3-Engine Dashboard & Trading Journal (KR/US Stocks)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT"
+}

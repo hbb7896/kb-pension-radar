@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0b0f19" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="1R 트레이더" />
+  <title>1R 트레이더 | Tom Doub R-System</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand" style="display:flex; align-items:center; gap:14px;">
+        <img src="icon.svg" alt="1R System Icon" style="width:52px; height:52px; border-radius:12px; box-shadow:0 4px 14px rgba(245,158,11,0.25); flex-shrink:0;" />
+        <div>
+          <div class="brand-badge">USIC +1,038% SYSTEM · 모바일 웹앱(PWA)</div>
+          <h1>Tom Doub <span>1R-System Trader</span></h1>
+          <p class="subtitle">운과 감정을 배제한 철저한 수학적 리스크(R) 통제 및 매매 기록 시스템 (KRW / USD 연동)</p>
+        </div>
+      </div>
+
+      <div class="account-summary-bar">
+        <button type="button" id="btnOpenMobileModal" class="acct-pill" style="cursor:pointer; border-color:#f59e0b; background:rgba(245,158,11,0.12); text-align:left;">
+          <span class="acct-label" style="color:#fde047;">📱 내 폰에서 접속 & 앱 설치</span>
+          <strong style="color:#f59e0b; font-size:14px;">QR코드 / 설치방법 보기</strong>
+          <small style="color:#cbd5e1;">크롬 홈 화면 추가 지원</small>
+        </button>
+        <div class="acct-pill">
+          <span class="acct-label">🇰🇷 한국 계좌 원금</span>
+          <strong id="headerKrwAcct">₩10,000,000</strong>
+          <small id="headerKrw1R">1R = ₩100,000</small>
+        </div>
+        <div class="acct-pill">
+          <span class="acct-label">🇺🇸 미국 계좌 원금</span>
+          <strong id="headerUsdAcct">$10,000</strong>
+          <small id="headerUsd1R">1R = $100.00</small>
+        </div>
+        <div class="acct-pill highlight">
+          <span class="acct-label">누적 R 성적표</span>
+          <strong id="headerTotalR">+0.00R</strong>
+          <small id="headerExpectancy">기대값(Edge): 0.00R/회</small>
+        </div>
+      </div>
+    </div>
+
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="tab-calc">
+        <span class="step-num">1단계</span> R 포지션 사이징 계산기 (시세 연동)
+      </button>
+      <button class="tab-btn" data-tab="tab-journal">
+        <span class="step-num">성적표</span> R-단위 매매 일지 & 시스템 위반 진단
+      </button>
+      <button class="tab-btn" data-tab="tab-engine">
+        <span class="step-num">2단계</span> 3대 복리 엔진 (엣지·기회·회전율) 시뮬레이터
+      </button>
+      <button class="tab-btn" data-tab="tab-research">
+        <span class="step-num">3~4단계</span> 7단계 전략 검증 & 가짜 금(AI 과적합) 방지
+      </button>
+      <a href="/kb-etf.html" class="tab-btn" style="text-decoration:none; border-color:#ffbc00; background:rgba(255,188,0,0.14); color:#fde047; font-weight:800;">
+        <span class="step-num" style="background:#ffbc00; color:#111827;">KB연금</span> KB국민은행 퇴직연금 284 전종목 ETF 차트 센터 ↗
+      </a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- ==================== TAB 1: 1단계 R 포지션 사이징 계산기 ==================== -->
+    <section id="tab-calc" class="tab-panel active">
+      <div class="grid-2col">
+        <!-- Left Column: 3-Minute Pre-Trade Calculator -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="badge-tag">STEP 1 · 매수 전 3분 계산법</span>
+              <h2>‘돈(원·달러)’이 아니라 ‘R(Risk)’ 단위로 주문 수량 역산하기</h2>
+            </div>
+            <div class="market-toggle">
+              <button type="button" id="btnMarketKR" class="mkt-btn active" data-market="KR">🇰🇷 한국 주식 (KRW)</button>
+              <button type="button" id="btnMarketUS" class="mkt-btn" data-market="US">🇺🇸 미국 주식 (USD)</button>
+            </div>
+          </div>
+
+          <!-- Stock Quote Search Bar -->
+          <div class="quote-search-box">
+            <label for="symbolInput">종목 검색 / 시세·ATR 자동 불러오기</label>
+            <div class="search-row">
+              <input type="text" id="symbolInput" placeholder="종목명 또는 티커 입력 (예: 삼성전자, 005930, NVDA, TSLA)" value="005930" />
+              <button type="button" id="btnFetchQuote" class="btn-primary">시세·ATR 조회</button>
+            </div>
+            <div class="quick-tickers" id="quickTickers">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Live Stock Info Banner -->
+          <div class="stock-banner" id="stockBanner">
+            <div class="stock-title">
+              <div>
+                <span class="stock-mkt-badge" id="bannerMarket">KR</span>
+                <strong id="bannerName">삼성전자</strong>
+                <span class="stock-code" id="bannerSymbol">(005930.KS)</span>
+              </div>
+              <span class="quote-source" id="bannerSource">시세 연동됨</span>
+            </div>
+            <div class="stock-metrics">
+              <div class="sm-item">
+                <span>현재가</span>
+                <strong id="bannerPrice">₩59,200</strong>
+              </div>
+              <div class="sm-item">
+                <span>14일 ATR(변동폭)</span>
+                <strong id="bannerAtr">₩1,350</strong>
+              </div>
+              <div class="sm-item">
+                <span>20일 최고 / 최저</span>
+                <strong id="banner20HL">₩61,500 / ₩56,800</strong>
+              </div>
+              <div class="sm-item">
+                <span>50일 이평선 / 거래량비</span>
+                <strong id="bannerMaVol">₩60,100 / 145%</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step Inputs -->
+          <div class="calc-steps">
+            <div class="step-block">
+              <div class="step-title">① 1R 금액 고정하기 (계좌의 1% 추천)</div>
+              <div class="form-row-3">
+                <div class="form-group">
+                  <label id="lblAccountSize">계좌 원금 (KRW)</label>
+                  <input type="number" id="inputAccountSize" value="10000000" step="100000" />
+                </div>
+                <div class="form-group">
+                  <label>1회 허용 리스크 비율 (%)</label>
+                  <div class="input-with-presets">
+                    <input type="number" id="inputRiskPct" value="1.0" step="0.1" min="0.1" max="5.0" />
+                    <div class="mini-presets">
+                      <button type="button" class="preset-risk" data-val="0.5">0.5%</button>
+                      <button type="button" class="preset-risk active" data-val="1.0">1.0%</button>
+                      <button type="button" class="preset-risk" data-val="1.5">1.5%</button>
+                      <button type="button" class="preset-risk" data-val="2.0">2.0%</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>내가 정한 1R 위험 금액</label>
+                  <div class="readonly-val r-highlight" id="calcOneRDisplay">₩100,000</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="step-block">
+              <div class="step-title">② 차트에서 ‘논리적 손절가’ 먼저 정하기</div>
+              <div class="stop-preset-bar">
+                <span>논리적 손절가 빠른 설정:</span>
+                <button type="button" class="btn-chip" id="btnStopLowAtr">진입봉 저가 - 1 ATR (톰 돕 추천)</button>
+                <button type="button" class="btn-chip" id="btnStopPriceAtr">현재가 - 1.5 ATR</button>
+                <button type="button" class="btn-chip" id="btnStop20Low">최근 20일 지지선(저가)</button>
+                <button type="button" class="btn-chip" id="btnStop5Pct">-5% 고정</button>
+              </div>
+              <div class="form-row-3">
+                <div class="form-group">
+                  <label id="lblEntryPrice">매수 예정가 (진입가)</label>
+                  <input type="number" id="inputEntryPrice" value="10000" step="any" />
+                </div>
+                <div class="form-group">
+                  <label id="lblStopPrice">논리적 손절가 (지지 이탈가)</label>
+                  <input type="number" id="inputStopPrice" value="9500" step="any" />
+                </div>
+                <div class="form-group">
+                  <label>1주당 손실 폭 (손절 폭 %)</label>
+                  <div class="readonly-val danger-text" id="calcRiskPerShare">₩500 (-5.00%)</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="step-block">
+              <div class="step-title">③ 목표가 및 셋업 메모 (손익비 R:R 점검)</div>
+              <div class="stop-preset-bar">
+                <span>목표가 빠른 설정:</span>
+                <button type="button" class="btn-chip" data-target-r="2">+2.0R 목표</button>
+                <button type="button" class="btn-chip active" data-target-r="3">+3.0R 목표 (정석)</button>
+                <button type="button" class="btn-chip" data-target-r="5">+5.0R 목표 (추세)</button>
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label id="lblTargetPrice">목표 매도가 (기대 수익 구간)</label>
+                  <input type="number" id="inputTargetPrice" value="11500" step="any" />
+                </div>
+                <div class="form-group">
+                  <label>진입 셋업 (기계적 규칙명)</label>
+                  <select id="inputSetupType">
+                    <option value="20일 신고가 돌파 + 거래량 200%">20일 신고가 돌파 + 거래량 200% (톰 돕 예시)</option>
+                    <option value="Two Tight Days (2일 타이트 캔들)">Two Tight Days (로스 하버 2일 타이트 캔들)</option>
+                    <option value="VCP 변동성 축소 돌파">VCP 변동성 축소 돌파 (마크 미너비니)</option>
+                    <option value="50일 이평선 지지 반등">50일 이동평균선 첫 지지 반등</option>
+                    <option value="전고점 박스권 돌파 (데이비드 라이언)">전고점 박스권 돌파 (데이비드 라이언)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Reverse Formula Result + Mini Chart & R-Ladder -->
+        <div class="card result-card">
+          <div class="card-header">
+            <div>
+              <span class="badge-tag gold">역산 공식 결과</span>
+              <h2>매수할 주식 수량 & 리스크 검증</h2>
+            </div>
+          </div>
+
+          <div class="formula-banner">
+            <div class="formula-title">톰 돕의 포지션 역산 공식</div>
+            <div class="formula-math" id="formulaDisplay">
+              매수 수량 = 1R 금액 (₩100,000) ÷ 1주 손실폭 (₩500) = <strong>200주</strong>
+            </div>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-box primary-kpi">
+              <span class="kpi-label">주문해야 할 정확한 주식 수</span>
+              <div class="kpi-value" id="resShares">200주</div>
+              <span class="kpi-sub" id="resTotalCost">총 매수 금액: ₩2,000,000</span>
+            </div>
+
+            <div class="kpi-box">
+              <span class="kpi-label">계좌 대비 투입 비중</span>
+              <div class="kpi-value" id="resWeightPct">20.0%</div>
+              <span class="kpi-sub" id="resWeightWarning">손절폭 -5.0% → 적정 비중</span>
+            </div>
+
+            <div class="kpi-box danger-kpi">
+              <span class="kpi-label">계획대로 손절 시 손실 (-1.0R)</span>
+              <div class="kpi-value" id="resMaxLoss">-₩100,000</div>
+              <span class="kpi-sub" id="resLossPctOfAcct">계좌 전체의 -1.00%로 완벽 통제</span>
+            </div>
+
+            <div class="kpi-box success-kpi">
+              <span class="kpi-label">목표가 도달 시 기대수익</span>
+              <div class="kpi-value" id="resTargetProfit">+₩300,000 (+3.0R)</div>
+              <span class="kpi-sub" id="resRRRatio">손익비 1 : 3.0 (우수 셋업)</span>
+            </div>
+          </div>
+
+          <!-- Tom Doub Setup Rule Checker -->
+          <div class="rule-check-panel">
+            <h3>톰 돕식 기계적 진입 조건 자동 체크 <small>(현재 종목 시세 기준)</small></h3>
+            <div class="rule-check-grid" id="ruleCheckGrid">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Interactive Price & R-Level Chart -->
+          <div class="chart-box">
+            <div class="chart-header">
+              <span>일봉 차트 & R-단위 가격 레벨 시각화 (진입가 / -1R 손절선 / +2R·+3R 목표선)</span>
+            </div>
+            <canvas id="priceChartCanvas" width="560" height="210"></canvas>
+          </div>
+
+          <!-- R-Price Ladder Table -->
+          <div class="r-ladder">
+            <div class="r-ladder-item loss-2r">
+              <span>-2.0R (손절 미루기 경고)</span>
+              <strong id="ladderMinus2R">₩9,000</strong>
+            </div>
+            <div class="r-ladder-item loss-1r">
+              <span>-1.0R (논리적 손절가)</span>
+              <strong id="ladderMinus1R">₩9,500</strong>
+            </div>
+            <div class="r-ladder-item entry-r">
+              <span>0.0R (매수 진입가)</span>
+              <strong id="ladderEntry">₩10,000</strong>
+            </div>
+            <div class="r-ladder-item win-2r">
+              <span>+2.0R (1차 익절 타점)</span>
+              <strong id="ladderPlus2R">₩11,000</strong>
+            </div>
+            <div class="r-ladder-item win-3r">
+              <span>+3.0R (목표 수익 타점)</span>
+              <strong id="ladderPlus3R">₩11,500</strong>
+            </div>
+          </div>
+
+          <div class="action-footer">
+            <button type="button" id="btnRegisterTrade" class="btn-gold-lg">
+              + 이 포지션을 R-매매 성적표에 기록하기
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: R-단위 매매 일지 & 성적표 ==================== -->
+    <section id="tab-journal" class="tab-panel">
+      <div class="journal-top-metrics">
+        <div class="j-metric-card">
+          <span>총 기록 매매 수</span>
+          <strong id="jTotalTrades">0회</strong>
+          <small id="jWinRate">승률: 0.0%</small>
+        </div>
+        <div class="j-metric-card">
+          <span>평균 수익 R / 평균 손실 R</span>
+          <strong id="jAvgWinLoss">+0.00R / -0.00R</strong>
+          <small id="jPayoffRatio">손익비(Payoff): 0.00</small>
+        </div>
+        <div class="j-metric-card highlight">
+          <span>1회당 수학적 기대수익 (Edge)</span>
+          <strong id="jExpectancyR">+0.00R</strong>
+          <small id="jExpectancyStatus">양수(+)여야 복리 엔진 작동</small>
+        </div>
+        <div class="j-metric-card">
+          <span>평균 보유 기간 (자본 회전율)</span>
+          <strong id="jAvgHoldDays">0.0일</strong>
+          <small id="jRuleCompliance">원칙 준수율 (-1R 이내 손절): 100%</small>
+        </div>
+      </div>
+
+      <div class="grid-journal">
+        <!-- Left: Add / Close Trade Form & Equity Curve in R -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="badge-tag">R-MULTIPLE EQUITY CURVE</span>
+              <h2>누적 R 수익 곡선 & 매매 성적표 기록</h2>
+            </div>
+          </div>
+          <canvas id="rCurveCanvas" width="520" height="220"></canvas>
+
+          <form id="tradeForm" class="trade-form">
+            <h3>매매 결과 R-단위 기록 / 청산 입력</h3>
+            <div class="form-row-3">
+              <div class="form-group">
+                <label>시장</label>
+                <select id="tMarket">
+                  <option value="KR">🇰🇷 한국 (KRW)</option>
+                  <option value="US">🇺🇸 미국 (USD)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>종목명 (티커)</label>
+                <input type="text" id="tName" placeholder="예: 삼성전자 / NVDA" required />
+              </div>
+              <div class="form-group">
+                <label>매수일</label>
+                <input type="date" id="tDate" required />
+              </div>
+            </div>
+
+            <div class="form-row-4">
+              <div class="form-group">
+                <label>1R 허용 위험액</label>
+                <input type="number" id="tOneR" value="100000" step="any" required />
+              </div>
+              <div class="form-group">
+                <label>매수가</label>
+                <input type="number" id="tEntry" value="10000" step="any" required />
+              </div>
+              <div class="form-group">
+                <label>계획 손절가 (-1R)</label>
+                <input type="number" id="tStop" value="9500" step="any" required />
+              </div>
+              <div class="form-group">
+                <label>실제 매도가 (청산가)</label>
+                <input type="number" id="tExit" value="11500" step="any" required />
+              </div>
+            </div>
+
+            <div class="form-row-3">
+              <div class="form-group">
+                <label>보유 일수 (회전율 체크)</label>
+                <input type="number" id="tHoldDays" value="3" min="1" max="365" required />
+              </div>
+              <div class="form-group">
+                <label>진입 셋업</label>
+                <input type="text" id="tSetup" value="20일 신고가 돌파 + 거래량 200%" />
+              </div>
+              <div class="form-group">
+                <label>예상 기록 성적 (R)</label>
+                <div class="readonly-val" id="tPreviewR">+3.00R (우수 매매)</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>매매 복기 메모 (원칙 준수 여부 / 슬리피지 기록)</label>
+              <input type="text" id="tNotes" placeholder="예: 계획대로 손절선 이탈 시 즉시 매도 (-1.0R 원칙 준수)" />
+            </div>
+
+            <button type="submit" class="btn-primary full-width">R 성적표에 매매 기록 저장</button>
+          </form>
+        </div>
+
+        <!-- Right: R-Scorecard Table & Diagnostics -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="badge-tag">DIAGNOSTIC LOG</span>
+              <h2>매매 후 R-단위 성적표 & 시스템 위반 자동 진단</h2>
+            </div>
+          </div>
+
+          <div class="diagnostic-guide">
+            <div class="diag-chip good"><strong>-1.0R 손절:</strong> 원칙을 완벽히 지킨 좋은 매매</div>
+            <div class="diag-chip bad"><strong>-1.2R 이하 손실:</strong> 손절 미룸·시스템 위반 또는 갭하락 경고</div>
+            <div class="diag-chip great"><strong>+2.0R 이상:</strong> 내가 건 위험의 2~5배를 번 엣지 매매</div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="r-table">
+              <thead>
+                <tr>
+                  <th>일자/보유</th>
+                  <th>종목 / 셋업</th>
+                  <th>진입 / 손절 / 청산</th>
+                  <th>1R 위험액</th>
+                  <th>R 성적표</th>
+                  <th>톰 돕 시스템 판정</th>
+                  <th>삭제</th>
+                </tr>
+              </thead>
+              <tbody id="tradesTableBody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: 2단계 3대 복리 엔진 시뮬레이터 ==================== -->
+    <section id="tab-engine" class="tab-panel">
+      <div class="grid-2col">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="badge-tag">STEP 2 · 3대 복리 엔진 가동법</span>
+              <h2>40% 수익률을 400%로 바꾸는 ‘엣지 · 기회 · 회전율’ 시뮬레이터</h2>
+            </div>
+          </div>
+
+          <p class="section-desc">
+            톰 돕은 선물·옵션 레버리지나 ‘몰빵’ 없이도 단 1% 리스크(1R)만으로 연 수백 %를 달성했습니다.
+            핵심은 <strong>① 엣지(1회당 +기대값)</strong> × <strong>② 기회(시장 전체 스캔)</strong> × <strong>③ 회전율(자금이 묶이지 않고 빠르게 순환)</strong>을 동시에 돌리는 것입니다.
+          </p>
+
+          <div class="engine-controls">
+            <div class="slider-group">
+              <div class="slider-header">
+                <label>① 승률 (Win Rate)</label>
+                <strong id="simWinRateVal">45%</strong>
+              </div>
+              <input type="range" id="simWinRate" min="25" max="75" step="1" value="45" />
+              <small>승률이 40~50%여도 손익비가 좋으면 강력한 플러스(+) 엣지가 발생합니다.</small>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <label>① 평균 수익 R 배수 (손실은 -1.0R 고정)</label>
+                <strong id="simAvgWinRVal">+2.5R</strong>
+              </div>
+              <input type="range" id="simAvgWinR" min="1.2" max="5.0" step="0.1" value="2.5" />
+              <small>수익은 +2R~+5R 이상 내고 손실은 -1R로 칼같이 자릅니다.</small>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <label>1회 매매당 리스크 비율 (1R = 계좌의 %)</label>
+                <strong id="simRiskPctVal">1.0%</strong>
+              </div>
+              <input type="range" id="simRiskPct" min="0.5" max="2.5" step="0.25" value="1.0" />
+              <small>단일 거래 리스크는 1% 내외로 극도로 안전하게 유지합니다.</small>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <label>② & ③ 연간 매매 회전 횟수 (기회 × 회전율)</label>
+                <strong id="simTradesPerYearVal">220회 / 년</strong>
+              </div>
+              <input type="range" id="simTradesPerYear" min="20" max="350" step="10" value="220" />
+              <small>아는 종목 3개만 보며 연 20번 매매할 때 vs 시장 전체를 감시해 연 220번 회전시킬 때의 차이</small>
+            </div>
+
+            <div class="btn-row">
+              <button type="button" id="btnLoadMyStatsToSim" class="btn-secondary">내 매매 성적표 데이터로 시뮬레이션 적용</button>
+            </div>
+          </div>
+
+          <div class="engine-comparison-cards">
+            <div class="comp-card dull">
+              <span>느린 회전 (연 25회 매매 · 대형주 소수만 매매)</span>
+              <strong id="simLowTurnoverReturn">+14.8%</strong>
+              <small id="simLowTurnoverFinal">1,000만 원 → 1,148만 원</small>
+            </div>
+            <div class="comp-card explosive">
+              <span>톰 돕식 고속 회전 (설정한 연간 회전수 적용)</span>
+              <strong id="simHighTurnoverReturn">+235.4%</strong>
+              <small id="simHighTurnoverFinal">1,000만 원 → 3,354만 원</small>
+            </div>
+          </div>
+
+          <canvas id="compoundChartCanvas" width="540" height="220"></canvas>
+        </div>
+
+        <!-- Right: Opportunity Scanner (Stock Filter for KR/US) -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="badge-tag gold">ENGINE 2 · 기회(Opportunity) 포착 스캐너</span>
+              <h2>시장 전체 조건검색 타점 모니터 (KR / US 주요 종목)</h2>
+            </div>
+          </div>
+          <p class="section-desc">
+            아는 종목 몇 개에 돈이 묶여 있지 않도록, <strong>50일 이평선 위 + 20일 신고가 근접 + 거래량 급증</strong> 조건을 만족하는 한·미 종목을 스캔하고 클릭 한 번으로 1단계 R 계산기에 불러옵니다.
+          </p>
+
+          <div class="scanner-filters">
+            <button type="button" class="scan-filter-btn active" data-filter="ALL">전체 감시 종목</button>
+            <button type="button" class="scan-filter-btn" data-filter="BREAKOUT">🔥 톰 돕 돌파 타점 (50일선 위 & 거래량 150%↑)</button>
+            <button type="button" class="scan-filter-btn" data-filter="KR">🇰🇷 한국 주식</button>
+            <button type="button" class="scan-filter-btn" data-filter="US">🇺🇸 미국 주식</button>
+          </div>
+
+          <div class="table-wrap">
+            <table class="r-table scanner-table">
+              <thead>
+                <tr>
+                  <th>종목명</th>
+                  <th>현재가</th>
+                  <th>50일선 대비</th>
+                  <th>20일 고가 근접도</th>
+                  <th>거래량비(20일)</th>
+                  <th>권장 1R 손절폭(ATR)</th>
+                  <th>즉시 계산</th>
+                </tr>
+              </thead>
+              <tbody id="scannerTableBody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: 3~4단계 전략 연구 & 가짜 금 방지 ==================== -->
+    <section id="tab-research" class="tab-panel">
+      <div class="grid-2col">
+        <!-- Step 3: 7-Step Research Process Builder -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="badge-tag">STEP 3 · 7단계 연구 순서</span>
+              <h2>내 매매 아이디어를 기계적 규칙으로 바꾸는 검증 체크리스트</h2>
+            </div>
+          </div>
+
+          <div class="rule-converter-box">
+            <div class="bad-rule">
+              <span>❌ 초보자의 애매한 생각</span>
+              <p>"거래량이 많이 터지며 전고점을 돌파할 때 산다."</p>
+            </div>
+            <div class="good-rule">
+              <span>✅ 톰 돕식 기계적 숫자화</span>
+              <p>"주가가 <strong>50일 이평선 위</strong>에 있고, 오늘 종가가 <strong>최근 20일 최고가 돌파</strong>, 오늘 거래량이 <strong>20일 평균의 200% 이상</strong>일 때 매수. 손절가는 <strong>진입봉 저가 - 1 ATR</strong>."</p>
+            </div>
+          </div>
+
+          <div class="checklist-steps" id="researchChecklist">
+            <label class="check-item">
+              <input type="checkbox" checked />
+              <div>
+                <strong>1. 아이디어 (기계적 숫자화)</strong>
+                <p>모든 진입·손절·청산 조건에서 '많이', '강하게' 같은 형용사를 제거하고 100% 숫자로 정의했는가?</p>
+              </div>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" />
+              <div>
+                <strong>2. 장기 백테스트 (최소 6~10년)</strong>
+                <p>최근 몇 개월 강세장이 아닌 상승장·하락장·횡보장이 모두 포함된 6~10년 이상의 데이터를 테스트했는가?</p>
+              </div>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" />
+              <div>
+                <strong>3. 다듬기 (약점 구간 5분위/10분위 분해)</strong>
+                <p>성과를 5분위/10분위로 쪼개어 어느 시장 환경(예: 지수가 200일선 아래일 때)에서 손실이 집중되는지 파악했는가?</p>
+              </div>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" />
+              <div>
+                <strong>4. 미사용 데이터 검증 (Out-of-Sample 딱 1회 적용)</strong>
+                <p>처음부터 아예 빼두었던 최근 1~2년 치 데이터에 완성된 규칙을 딱 한 번만 돌려보고, 무너지면 미련 없이 폐기했는가?</p>
+              </div>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" />
+              <div>
+                <strong>5. 차트 눈으로 직접 확인 (Visual Check)</strong>
+                <p>통계 숫자만 믿지 않고 실제 차트 위 매수·매도 타점을 눈으로 하나씩 따라가며 체결 가능성과 룩어헤드 오류를 확인했는가?</p>
+              </div>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" />
+              <div>
+                <strong>6. 확장 (기회와 회전율 늘리기)</strong>
+                <p>우위(Edge)가 검증된 규칙을 적용할 종목군(KR/US)이나 시간 프레임(일봉·60분봉)을 넓혔는가?</p>
+              </div>
+            </label>
+            <label class="check-item">
+              <input type="checkbox" />
+              <div>
+                <strong>7. 깊게 파고들기 (Mastery)</strong>
+                <p>이 모든 과정을 통과한 1개의 진짜 셋업을 최소 몇 주~몇 달간 흔들림 없이 마스터하고 있는가?</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Step 4: Fool's Gold Prevention & Data Budget Planner + Backtrader Code Generator -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="badge-tag gold">STEP 4 · ‘가짜 금(Fool's Gold)’ 방지기</span>
+              <h2>데이터 3등분 예산 배분 & 검증된 엔진(Backtrader) 코드 생성기</h2>
+            </div>
+          </div>
+
+          <div class="data-budget-box">
+            <h3>1. 데이터를 ‘예산’처럼 3등분 해두기 (자기기만 방지)</h3>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>백테스트 시작 연도</label>
+                <input type="number" id="budgetStartYear" value="2016" min="2000" max="2024" />
+              </div>
+              <div class="form-group">
+                <label>백테스트 종료 연도</label>
+                <input type="number" id="budgetEndYear" value="2026" min="2010" max="2030" />
+              </div>
+            </div>
+            <div class="budget-bar" id="budgetBar">
+              <div class="b-seg seg-explore" id="segExplore">① 탐색용 (50%)<br><strong>2016 ~ 2020</strong></div>
+              <div class="b-seg seg-refine" id="segRefine">② 다듬기용 (30%)<br><strong>2021 ~ 2023</strong></div>
+              <div class="b-seg seg-lock" id="segLock">🔒 ③ 최종 확인용 (20% 금고)<br><strong>2024 ~ 2026 (열람 금지)</strong></div>
+            </div>
+            <small class="budget-warn">⚠️ ③번 데이터는 전략이 완전히 확정될 때까지 절대 열어보지 않으며, 단 1회만 테스트합니다.</small>
+          </div>
+
+          <div class="backtrader-gen-box">
+            <h3>2. 검증된 오픈소스 백테스트 엔진(Backtrader) 템플릿 생성</h3>
+            <p class="section-desc">
+              AI에게 백테스트 계산기를 직접 짜게 하면 룩어헤드 편향(미래 데이터 참조) 오류가 발생합니다. 아래에서 숫자 조건을 설정하면 <strong>검증된 오픈소스 엔진인 Python Backtrader + R-사이징 규격 코드</strong>를 자동 생성합니다.
+            </p>
+            <div class="form-row-3">
+              <div class="form-group">
+                <label>이평선 필터 (일)</label>
+                <input type="number" id="btMaPeriod" value="50" />
+              </div>
+              <div class="form-group">
+                <label>신고가 돌파 기간 (일)</label>
+                <input type="number" id="btBreakoutPeriod" value="20" />
+              </div>
+              <div class="form-group">
+                <label>거래량 급증 배수 (%)</label>
+                <input type="number" id="btVolMult" value="200" />
+              </div>
+            </div>
+            <pre class="code-preview" id="btCodeOutput"></pre>
+            <button type="button" id="btnCopyBtCode" class="btn-secondary full-width">Backtrader 검증 코드 복사하기</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Mobile Connect & PWA Install Guide Modal -->
+  <div id="mobileConnectModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:200; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:#131a2a; border:1px solid #f59e0b; border-radius:16px; max-width:480px; width:100%; padding:22px; color:#f1f5f9;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <img src="icon.svg" alt="Icon" style="width:40px; height:40px; border-radius:10px;" />
+          <div>
+            <strong style="font-size:16px; color:#fde047;">📱 스마트폰 접속 & 앱 설치 안내</strong>
+            <div style="font-size:12px; color:#94a3b8;">새로운 골드 'R' 차트 아이콘이 홈 화면에 설치됩니다</div>
+          </div>
+        </div>
+        <button type="button" id="btnCloseMobileModal" style="background:transparent; border:none; color:#94a3b8; font-size:20px; cursor:pointer;">✕</button>
+      </div>
+
+      <div style="background:#0b0f19; border:1px solid #28344f; border-radius:10px; padding:14px; margin-bottom:14px;">
+        <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">언제 어디서나 스마트폰 크롬 주소창에 입력:</div>
+        <div id="mobileUrlDisplay" style="font-size:18px; font-weight:800; color:#38bdf8; word-break:break-all;">https://tom-doub-r.web.app</div>
+      </div>
+
+      <div style="font-size:13px; line-height:1.6; color:#cbd5e1; margin-bottom:16px;">
+        <strong>[안드로이드 크롬(Chrome)에서 앱으로 설치하는 법]</strong><br/>
+        1. 스마트폰 크롬에서 위 주소로 접속합니다.<br/>
+        2. 하단의 <strong>[📲 크롬 홈 화면에 앱 설치하기]</strong> 버튼을 누르거나, 우측 상단 메뉴(⋮) → <strong>[앱 설치]</strong> 또는 <strong>[홈 화면에 추가]</strong>를 누릅니다.<br/>
+        3. 바탕화면에 황금빛 <strong>‘1R 트레이더’</strong> 전용 아이콘이 생성됩니다!<br/><br/>
+        <strong>[아이폰(Safari/Chrome)에서 설치하는 법]</strong><br/>
+        하단 공유 버튼(⬆️) → <strong>[홈 화면에 추가]</strong>를 누르면 전용 아이콘으로 설치됩니다.
+      </div>
+
+      <button type="button" id="btnTriggerInstallPrompt" class="btn-gold-lg" style="margin-bottom:8px;">
+        📲 지금 이 기기에 웹앱 바로 설치하기
+      </button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">저장되었습니다.</div>
+  <script src="app.js"></script>
+</body>
+</html>

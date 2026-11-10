@@ -1,0 +1,9 @@
+{
+  "settings": {
+    "krwAccount": 10000000,
+    "usdAccount": 10000,
+    "defaultRiskPct": 1,
+    "fxRate": 1380
+  },
+  "trades": []
+}

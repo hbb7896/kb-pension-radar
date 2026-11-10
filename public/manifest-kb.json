@@ -1,0 +1,28 @@
+{
+  "name": "KB국민은행 퇴직연금 284 ETF 차트 센터",
+  "short_name": "KB연금ETF",
+  "description": "KB국민은행 퇴직연금(DC/IRP) 거래 가능 284개 전종목 ETF 일·주·월봉 멀티차트 & 70:30 시뮬레이터",
+  "start_url": "./kb-etf.html",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#ffbc00",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
